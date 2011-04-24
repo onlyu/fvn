@@ -37,8 +37,6 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
      by default internally */ 
   printf("+");
   size_t retcode = fread(ptr, size, nmemb, stream);
- 
-  fprintf(stderr, "*** We read %d bytes from file\n", (int)retcode);
   return retcode;
 }
 
@@ -164,7 +162,7 @@ int do_upload(char *url, char *usr, char *pwd, char *local_file, char *remote_fi
   fsize = (curl_off_t)file_info.st_size;
  
   //printf("Local file size: %" CURL_FORMAT_CURL_OFF_T " bytes.\n", fsize);
-  printf("putting file [%"CURL_FORMAT_CURL_OFF_T"]:", fsize);
+  printf("putting file %s/%s [%"CURL_FORMAT_CURL_OFF_T"]:", url, remote_file, fsize);
  
   /* get a FILE * of the same file */ 
   hd_src = fopen(local_file, "rb");
