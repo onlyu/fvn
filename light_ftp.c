@@ -35,6 +35,7 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
   /* in real-world cases, this would probably get this data differently
      as this fread() stuff is exactly what the library already would do
      by default internally */ 
+  printf("+");
   size_t retcode = fread(ptr, size, nmemb, stream);
  
   fprintf(stderr, "*** We read %d bytes from file\n", (int)retcode);
@@ -43,6 +44,7 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 
 static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
+  printf("+");
   size_t retcode = fwrite(ptr, size, nmemb, stream);
   return retcode;
 }
@@ -75,7 +77,6 @@ int do_download(char *url, char *usr, char *pwd, char *local_file, char *remote_
   sprintf(cmd,"dirname %s | xargs mkdir -p ", local_tmp_file);
   system(cmd);
 
-
   /* open the file for write */
   fd_dest = fopen(local_tmp_file, "wb");
 
@@ -83,6 +84,7 @@ int do_download(char *url, char *usr, char *pwd, char *local_file, char *remote_
     return FAILED;
   }
 
+  printf("getting file %s:", remote_url);
   curl_global_init(CURL_GLOBAL_ALL);
   
   /* get a curl handle */ 
@@ -92,11 +94,11 @@ int do_download(char *url, char *usr, char *pwd, char *local_file, char *remote_
       curl_easy_setopt(curl, CURLOPT_USERPWD, usr_pwd);
     }
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-    curl_easy_setopt(curl, CURLOPT_READDATA, fd_dest);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fd_dest);
 
     curl_easy_setopt(curl, CURLOPT_URL, remote_url);
     /* Switch on full protocol/debug output */ 
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
  
     res = curl_easy_perform(curl);
  
@@ -161,7 +163,8 @@ int do_upload(char *url, char *usr, char *pwd, char *local_file, char *remote_fi
   }
   fsize = (curl_off_t)file_info.st_size;
  
-  printf("Local file size: %" CURL_FORMAT_CURL_OFF_T " bytes.\n", fsize);
+  //printf("Local file size: %" CURL_FORMAT_CURL_OFF_T " bytes.\n", fsize);
+  printf("putting file [%"CURL_FORMAT_CURL_OFF_T"]:", fsize);
  
   /* get a FILE * of the same file */ 
   hd_src = fopen(local_file, "rb");
@@ -322,16 +325,16 @@ int main(int argc, char **argv)
     }
     if(!global_arg.remote_file || strlen(global_arg.remote_file) == 0){
       global_arg.remote_file = global_arg.local_file;
-      printf("warning:no argument remote file!!!\n");
+      //printf("warning:no argument remote file!!!\n");
     }
   }else{
     if(!global_arg.remote_file || strlen(global_arg.remote_file) == 0){
       printf("error:get method must have remote file name!!!\n");
       display_usage();
     }
-    if(global_arg.local_file || strlen(global_arg.local_file) == 0){
+    if(!global_arg.local_file || strlen(global_arg.local_file) == 0){
       global_arg.local_file = global_arg.remote_file;
-      printf("warning:no argument local file!!!\n");
+      //printf("warning:no argument local file!!!\n");
     }
   }
 
@@ -350,6 +353,6 @@ int main(int argc, char **argv)
 	      global_arg.remote_file);
   }
 	
-
+  printf("\n");
   return SUCCESS;
 }
