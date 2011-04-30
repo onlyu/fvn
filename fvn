@@ -50,6 +50,7 @@ sub fvn_save_config
 
 sub usage
 {
+    print "usage:\n";
     print "fvn add file\n";
     print "fvn del file\n";
     print "fvn commit\n";
@@ -114,22 +115,32 @@ sub fvn_commit
 	$ctx->addfile(*FILE);
 	close(FILE);
 
+	my $digest = $ctx->hexdigest;
+
 	my %file_info = %{$fvn_config{"files"}->{$file}};
-	unless( $ctx->hexdigest eq $file_info{"md5"}){
-	    $file_info{"md5"} = $ctx->hexdigest;
+	#print "$digest === ",$file_info{"md5"},"\n";
+	if(not $digest eq $file_info{"md5"}){
+	    $fvn_config{"files"}->{$file}->{"md5"} = $digest;
 	    if( $file_info{"action"} eq "none" ){
+		$fvn_config{"files"}->{$file}->{"action"} = "change";
 		$file_info{"action"} = "change";
 	    }
 	}
+	
+	#print "$digest === ",$file_info{"md5"}," ";
 
 	if($file_info{"action"} eq "none"){
+	    print "$file unchange\n";
 	    $unchange += 1;
 	}elsif($file_info{"action"} eq "add"){
+	    print "$file add\n";
 	    $add += 1;
 	}elsif($file_info{"action"} eq "del"){
+	    print "$file del\n";
 	    $del += 1;
 	}elsif($file_info{"action"} eq "change"){
-	    $change += 0;
+	    print "$file change\n";
+	    $change += 1;
 	}
     }
 
@@ -140,9 +151,9 @@ sub fvn_commit
     $fvn_config{"version_local"} += 1;    
     print "server version:$fvn_config{'version_server'}\n";
     print "local version:$fvn_config{'version_local'}\n";
-    print "add:$add\n";
-    print "del:$del\n";
-    print "change:$change\n";
+    print "add:$add ";
+    print "del:$del ";
+    print "change:$change ";
     print "unchange:$unchange\n";
 
 }
@@ -160,6 +171,7 @@ sub fvn_push
 	}elsif($file_info{"action"} eq "change"){
 	    put_file($file);
 	}elsif($file_info{"action"} eq "none"){
+	    print "$file has not change\n";
 	}
 	$fvn_config{"files"}->{$file}->{"action"} = "none";
     }

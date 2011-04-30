@@ -140,7 +140,7 @@ int do_upload(char *url, char *usr, char *pwd, char *local_file, char *remote_fi
 
   strcat(buf_1, "RNFR ");
   strcat(buf_1, remote_file);
-  strcat(buf_1, ".tmp");
+  //strcat(buf_1, ".tmp");
 
   strcat(buf_2, "RNTO ");
   strcat(buf_2, remote_file);
@@ -152,7 +152,7 @@ int do_upload(char *url, char *usr, char *pwd, char *local_file, char *remote_fi
   strcat(remote_url, url);
   strcat(remote_url, "/");
   strcat(remote_url, remote_file);
-  strcat(remote_url, ".tmp");
+  //strcat(remote_url, ".tmp");
 
   /* get the file size of the local file */ 
   if(stat(local_file, &file_info)) {
