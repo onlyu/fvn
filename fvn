@@ -28,6 +28,8 @@ if($ARGV[0] eq "add"){
     fvn_pull();
 }elsif($ARGV[0] eq "set"){
     fvn_set($ARGV[1]);
+}elsif($ARGV[0] eq "sync"){
+    fvn_sync($ARGV[1]);
 }else{
     usage();
 }
@@ -70,17 +72,30 @@ sub fvn_add
     unless( -e $file_name ){
 	die "file $file_name not exist!!!\n";
     }
-    
-    my $ctx = Digest::MD5->new;
-    open(FILE, "<$file_name");
-    $ctx->addfile(*FILE);
-    close(FILE);
 
-    $fvn_config{"files"}->{$file_name} = {
-	md5=>$ctx->hexdigest,
-	action=>"add",
-    };
-    print "add file $file_name success\n";
+    # as for dir, add all files to the fvn repository
+    if(-f $file_name){
+	my $ctx = Digest::MD5->new;
+	open(FILE, "<$file_name");
+	$ctx->addfile(*FILE);
+	close(FILE);
+
+	$fvn_config{"files"}->{$file_name} = {
+	    md5=>$ctx->hexdigest,
+	    action=>"add",
+	};
+	print "add file $file_name success\n";
+    }else{
+	opendir(DIR, $file_name) or "die can not open dir $file_name";
+	my @names = readdir(DIR);
+	closedir(DIR);
+	for my $name (@names){
+	    if($name eq "."){ next;}
+	    if($name eq ".."){ next;}
+	    fvn_add($file_name.'/'.$name);
+	}
+    }
+    
 }
 
 sub fvn_del
@@ -130,7 +145,7 @@ sub fvn_commit
 	#print "$digest === ",$file_info{"md5"}," ";
 
 	if($file_info{"action"} eq "none"){
-	    print "$file unchange\n";
+	    #print "$file unchange\n";
 	    $unchange += 1;
 	}elsif($file_info{"action"} eq "add"){
 	    print "$file add\n";
@@ -171,7 +186,6 @@ sub fvn_push
 	}elsif($file_info{"action"} eq "change"){
 	    put_file($file);
 	}elsif($file_info{"action"} eq "none"){
-	    print "$file has not change\n";
 	}
 	$fvn_config{"files"}->{$file}->{"action"} = "none";
     }
@@ -182,6 +196,23 @@ sub fvn_push
     print "push success\n";
 }
 
+sub fvn_sync
+{
+    my %files = %{$fvn_config{"files"}};
+    foreach my $file (keys %files){
+	my %file_info = %{$fvn_config{"files"}->{$file}};
+
+	put_file($file);
+	$fvn_config{"files"}->{$file}->{"action"} = "none";
+    }
+
+    $fvn_config{"version_server"} += 1;
+    fvn_save_config(".config");
+    put_file(".config");
+    print "push success\n";
+
+}
+
 sub fvn_pull
 {
     print "currently not support\n";
@@ -190,6 +221,7 @@ sub fvn_pull
 sub put_file
 {
     my ($file) = @_;
+    $file =~ s/\/\//\//g;
     system("./light_ftp --put --user ".$fvn_config{"usr"}.
 	   " --password ".$fvn_config{"pwd"}.
 	   " --local-file ".$file.
